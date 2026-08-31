@@ -78,7 +78,12 @@ jobs:
                Volver a añadir un label ya presente no causa error.
 
             4. Redacta el diagnóstico con la herramienta Write en `/tmp/diagnosis.md`, con
-               EXACTAMENTE este formato y con el marcador oculto como primera línea:
+               EXACTAMENTE este formato y con el marcador oculto como primera línea.
+               Todo lo que escribas debe estar en Markdown válido que GitHub pueda
+               renderizar (GitHub Flavored Markdown): encabezados con `#`, listas con
+               `-` o `1.`, `**negrita**`, rutas y código entre backticks, bloques de
+               código con triple backtick y su lenguaje, tablas con `|` si hacen falta.
+               No uses HTML salvo el marcador oculto ni sintaxis que GitHub no soporte.
 
                <!-- claude-issue-triage-diagnosis -->
                ## 🩺 Diagnóstico automático (Claude)
