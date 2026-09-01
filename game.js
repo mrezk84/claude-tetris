@@ -4,6 +4,10 @@ const COLS = 10;
 const ROWS = 20;
 const BLOCK = 30;
 
+// Celda hueca de la tuerca: solida (bloquea colision y cuenta para la linea)
+// pero se dibuja vacia. Es truthy, asi collide/merge/clearLines la tratan como llena.
+const HOLE = -1;
+
 const COLORS = [
   null,
   '#4dd0e1', // I - cyan
@@ -13,6 +17,7 @@ const COLORS = [
   '#e57373', // Z - red
   '#90caf9', // J - pale blue
   '#ffb74d', // L - orange
+  '#9e9e9e', // Tuerca - gris metalico
 ];
 
 const PIECES = [
@@ -24,6 +29,7 @@ const PIECES = [
   [[5,5,0],[0,5,5],[0,0,0]],                  // Z
   [[6,0,0],[6,6,6],[0,0,0]],                  // J
   [[0,0,7],[7,7,7],[0,0,0]],                  // L
+  [[8,8,8],[8,HOLE,8],[8,8,8]],               // Tuerca (reto: agujero central)
 ];
 
 const LINE_SCORES = [0, 100, 300, 500, 800];
@@ -51,7 +57,7 @@ function createBoard() {
 }
 
 function randomPiece() {
-  const type = Math.floor(Math.random() * 7) + 1;
+  const type = Math.floor(Math.random() * (PIECES.length - 1)) + 1;
   const shape = PIECES[type].map(row => [...row]);
   return { type, shape, x: Math.floor(COLS / 2) - Math.floor(shape[0].length / 2), y: 0 };
 }
@@ -163,6 +169,16 @@ function updateHUD() {
 
 function drawBlock(context, x, y, colorIndex, size, alpha) {
   if (!colorIndex) return;
+  if (colorIndex === HOLE) {
+    // Agujero de la tuerca: solido pero visualmente vacio. Un contorno tenue
+    // comunica que la celda esta ocupada (p. ej. al apoyar otra pieza encima).
+    context.globalAlpha = (alpha ?? 1) * 0.25;
+    context.strokeStyle = COLORS[8];
+    context.lineWidth = 2;
+    context.strokeRect(x * size + 4, y * size + 4, size - 8, size - 8);
+    context.globalAlpha = 1;
+    return;
+  }
   const color = COLORS[colorIndex];
   context.globalAlpha = alpha ?? 1;
   context.fillStyle = color;
