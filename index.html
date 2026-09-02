@@ -60,7 +60,61 @@
       <div class="overlay-box">
         <p id="overlay-title">GAME OVER</p>
         <p id="overlay-score"></p>
+
+        <div id="overlay-records" class="records-panel hidden">
+          <p class="records-heading">RÉCORDS</p>
+          <table class="records-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Nombre</th>
+                <th>Puntos</th>
+                <th>Líneas</th>
+                <th>Nivel</th>
+              </tr>
+            </thead>
+            <tbody id="overlay-records-body"></tbody>
+          </table>
+          <div class="records-metrics">
+            <span>Mejor combo: <strong id="overlay-best-combo">0</strong></span>
+            <span>Líneas máximas: <strong id="overlay-max-lines">0</strong></span>
+          </div>
+          <div id="name-entry" class="name-entry hidden">
+            <input id="name-input" type="text" maxlength="12" placeholder="Tu nombre" autocomplete="off" />
+            <button id="save-score-btn" type="button">Guardar</button>
+          </div>
+        </div>
+
         <button id="restart-btn">Reiniciar</button>
+      </div>
+    </div>
+
+    <div id="start-screen" class="overlay start-screen hidden">
+      <div class="overlay-box">
+        <p class="start-title">TETRIS</p>
+
+        <div class="records-panel">
+          <p class="records-heading">RÉCORDS</p>
+          <table class="records-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Nombre</th>
+                <th>Puntos</th>
+                <th>Líneas</th>
+                <th>Nivel</th>
+              </tr>
+            </thead>
+            <tbody id="start-records-body"></tbody>
+          </table>
+          <div class="records-metrics">
+            <span>Mejor combo: <strong id="start-best-combo">0</strong></span>
+            <span>Líneas máximas: <strong id="start-max-lines">0</strong></span>
+          </div>
+        </div>
+
+        <button id="play-btn">Jugar</button>
+        <button id="reset-records-btn" class="reset-records-btn" type="button">Borrar récords</button>
       </div>
     </div>
   </div>

@@ -17,6 +17,7 @@ Implementación del clásico **Tetris** en JavaScript vanilla, usando HTML5 Canv
     - [Opción 1: abrir el archivo directamente](#opción-1-abrir-el-archivo-directamente)
     - [Opción 2: servidor local (recomendado)](#opción-2-servidor-local-recomendado)
   - [Controles](#controles)
+  - [Tabla de records local](#tabla-de-records-local)
   - [Cómo funciona](#cómo-funciona)
     - [1. `index.html`](#1-indexhtml)
     - [2. `style.css`](#2-stylecss)
@@ -43,6 +44,7 @@ Es una versión jugable del Tetris clásico con todas las mecánicas que esperar
 - **Sistema de puntuación** clásico de Tetris (100 / 300 / 500 / 800 multiplicado por nivel).
 - **Niveles** que aumentan cada 10 líneas y aceleran la caída.
 - **Pausa** y **Game Over** con opción de reinicio.
+- **Tabla de records local**: pantalla de inicio con el top 5, panel de records en el Game Over y métricas de mejor combo y líneas máximas. Ver [Tabla de records local](#tabla-de-records-local).
 
 ---
 
@@ -89,6 +91,46 @@ Después abre `http://localhost:8000` en el navegador.
 
 ---
 
+## Tabla de records local
+
+El juego guarda una tabla de **records** en `localStorage`, bajo la clave `tetris-highscores`. No se envía nada a ningún servidor: todo vive en el navegador.
+
+### Pantalla de inicio
+
+Al cargar la página ya no arranca la partida directamente: aparece una **pantalla de inicio** con el título, el **top 5** de puntuaciones y dos métricas globales (mejor combo y líneas máximas). Se juega pulsando **Jugar**.
+
+Desde esa pantalla, el botón **Borrar récords** vacía la tabla (pide confirmación antes).
+
+### Game Over
+
+Al terminar una partida se muestra el panel de records:
+
+- Si la puntuación entra en el **top 5**, aparece un campo de texto para el nombre y un botón **Guardar**. Al guardar, la fila recién insertada se resalta.
+- Si no entra, se muestra solo la tabla.
+
+El nombre se recorta a 12 caracteres y, si se deja vacío, se guarda como `Anónimo`. También puede confirmarse con `Enter`.
+
+### Métricas extra
+
+- **Mejor combo** (`bestCombo`): la racha máxima de bloqueos consecutivos que limpiaron al menos una línea. El contador sube en cada bloqueo que limpia línea y se reinicia cuando un bloqueo no limpia ninguna.
+- **Líneas máximas** (`maxLines`): el mayor total de líneas alcanzado en una sola partida.
+
+Ambas se conservan entre partidas y se muestran en la pantalla de inicio y en el Game Over.
+
+### Esquema de datos
+
+```js
+{
+  scores: [{ name, score, lines, level, date }], // top 5, ordenado por score
+  bestCombo: 0,
+  maxLines: 0
+}
+```
+
+Toda lectura y escritura va envuelta en `try/catch` y el parseo tolera datos corruptos devolviendo el estado por defecto (tabla vacía).
+
+---
+
 ## Cómo funciona
 
 El juego se compone de tres archivos que cooperan:
@@ -99,7 +141,8 @@ Define la estructura visual:
 
 - Un `<canvas id="board">` de **300 × 600** píxeles donde se renderiza el tablero.
 - Un panel lateral con `SCORE`, `LINES`, `LEVEL`, vista de la siguiente pieza y la lista de controles.
-- Un overlay para los estados **PAUSA** y **GAME OVER**.
+- Un overlay para los estados **PAUSA** y **GAME OVER** (este último incluye el panel de records).
+- Una **pantalla de inicio** (`#start-screen`) con el título, la tabla de records y el botón **Jugar**.
 
 ### 2. `style.css`
 
