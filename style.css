@@ -45,6 +45,25 @@
   --shadow: rgba(0, 0, 0, 0.15);
 }
 
+/* ---- Skins visuales ----
+   Van DESPUÉS de los bloques [data-theme] para que la skin gane sobre el
+   toggle claro/oscuro. Retro no aparece: hereda del tema (comportamiento actual).
+   applyTheme() vuelve a leer --grid-color tras cualquier cambio. */
+[data-skin="neon"] {
+  --board-bg: #000000;
+  --grid-color: #101018;
+}
+
+[data-skin="pastel"] {
+  --board-bg: #fdf7fb;
+  --grid-color: #ececf2;
+}
+
+[data-skin="pixel"] {
+  --board-bg: #14141c;
+  --grid-color: #2a2a38;
+}
+
 body {
   background: var(--bg);
   color: var(--text);
@@ -147,6 +166,29 @@ body {
   border: 1px solid var(--border);
   background: var(--board-bg);
   border-radius: 4px;
+}
+
+/* ---- Selector de skin ---- */
+.skin-select {
+  width: 100%;
+  background: var(--board-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.skin-select:hover {
+  border-color: var(--accent);
+}
+
+.skin-select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 /* ---- Controles ---- */

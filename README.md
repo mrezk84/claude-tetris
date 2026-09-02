@@ -22,6 +22,7 @@ Implementación del clásico **Tetris** en JavaScript vanilla, usando HTML5 Canv
     - [2. `style.css`](#2-stylecss)
     - [3. `game.js`](#3-gamejs)
     - [Flujo del juego](#flujo-del-juego)
+  - [Skins visuales](#skins-visuales)
   - [Tecnologías](#tecnologías)
   - [Estructura del proyecto](#estructura-del-proyecto)
   - [Personalización](#personalización)
@@ -43,6 +44,7 @@ Es una versión jugable del Tetris clásico con todas las mecánicas que esperar
 - **Sistema de puntuación** clásico de Tetris (100 / 300 / 500 / 800 multiplicado por nivel).
 - **Niveles** que aumentan cada 10 líneas y aceleran la caída.
 - **Pausa** y **Game Over** con opción de reinicio.
+- **Skins visuales**: selector en el panel lateral con 4 estilos (Retro, Neón, Pastel, Pixel art) que cambian la apariencia del tablero al instante, sin recargar. La preferencia se guarda en `localStorage` (`tetris-skin`).
 
 ---
 
@@ -141,6 +143,36 @@ Cuando una pieza recién generada ya colisiona al aparecer (`spawn`), se dispara
 
 ---
 
+## Skins visuales
+
+El panel lateral incluye un selector **SKIN** con cuatro estilos que redibujan el
+tablero y la vista previa **al instante**, sin recargar la página (funciona
+también con el juego en pausa o en _game over_):
+
+| Skin          | Aspecto                                                                  |
+| ------------- | ----------------------------------------------------------------------- |
+| **Retro**     | Estilo original: bloque plano con _highlight_ superior. Es la referencia. |
+| **Neón**      | Fondo negro y bloques con resplandor (`shadowBlur`) sobre núcleo oscuro. |
+| **Pastel**    | Colores suaves y esquinas redondeadas (con _fallback_ para Safari < 16). |
+| **Pixel art** | Textura de _dithering_ de dos tonos derivados del color base y borde tipo _sprite_. |
+
+Detalles de implementación:
+
+- Tabla `SKINS` en `game.js`: cada entrada aporta su paleta (`colors[1..8]`) y su
+  función `drawBlock`. `drawBlock()` resuelve el color y delega en la skin activa;
+  el agujero de la tuerca (`HOLE`) y la celda vacía se resuelven en común.
+- El agujero central de la **tuerca** se sigue viendo vacío en las 4 skins, y la
+  pieza fantasma (`alpha` 0.2) funciona en todas.
+- El fondo del canvas y el color del grid se controlan con `--board-bg` /
+  `--grid-color`. Cada skin (salvo Retro, que hereda del tema) sobrescribe esas
+  variables en `style.css`, **después** de los bloques `[data-theme]`, de modo que
+  la skin gana sobre el toggle claro/oscuro.
+- La preferencia se persiste en `localStorage` bajo `tetris-skin` y se aplica
+  antes del primer render con un script _anti-flash_ en `index.html` (igual que el
+  del tema), fijando `data-skin` en `<html>`.
+
+---
+
 ## Tecnologías
 
 - **HTML5** — marcado y dos elementos `<canvas>` (tablero y vista previa).
@@ -175,6 +207,7 @@ Algunos parámetros fáciles de tunear en `game.js`:
 | `ROWS`         | Filas del tablero                        | `20`                  |
 | `BLOCK`        | Tamaño en píxeles de cada celda          | `30`                  |
 | `COLORS`       | Paleta de colores por tipo de pieza      | 8 colores             |
+| `SKINS`        | Estilos visuales (paleta + `drawBlock`)   | `retro/neon/pastel/pixel` |
 | `LINE_SCORES`  | Puntos por 1, 2, 3 o 4 líneas eliminadas | `[0,100,300,500,800]` |
 | `dropInterval` | Velocidad inicial de caída en ms         | `1000`                |
 

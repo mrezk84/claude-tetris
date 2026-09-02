@@ -12,6 +12,9 @@
           document.documentElement.setAttribute('data-theme', 'light');
         }
       } catch (e) {}
+      var skin = 'retro';
+      try { skin = localStorage.getItem('tetris-skin') || 'retro'; } catch (e) {}
+      document.documentElement.setAttribute('data-skin', skin);
     })();
   </script>
 </head>
@@ -41,6 +44,16 @@
         <div class="panel-section">
           <span class="label">NEXT</span>
           <canvas id="next-canvas" width="120" height="120"></canvas>
+        </div>
+
+        <div class="panel-section">
+          <span class="label">SKIN</span>
+          <select id="skin-select" class="skin-select" aria-label="Seleccionar estilo visual">
+            <option value="retro">Retro</option>
+            <option value="neon">Neón</option>
+            <option value="pastel">Pastel</option>
+            <option value="pixel">Pixel art</option>
+          </select>
         </div>
 
         <div class="panel-section controls">

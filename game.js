@@ -46,11 +46,166 @@ const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
 const themeToggleBtn = document.getElementById('theme-toggle');
+const skinSelect = document.getElementById('skin-select');
 
 const THEME_KEY = 'tetris-theme';
+const SKIN_KEY = 'tetris-skin';
 
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
 let gridColor = '#22222e';
+
+// ---- Skins visuales ----
+// Cada entrada de SKINS aporta su paleta (colors[1..8]) y su forma de pintar
+// un bloque solido. El early-return de celda vacia y el caso HOLE (agujero de
+// la tuerca) viven en drawBlock, comun a todas las skins.
+
+function drawBlockRetro(context, x, y, color, size, alpha) {
+  // Comportamiento historico EXACTO: fillRect + highlight superior tenue.
+  context.globalAlpha = alpha ?? 1;
+  context.fillStyle = color;
+  context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
+  context.fillStyle = 'rgba(255,255,255,0.12)';
+  context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
+  context.globalAlpha = 1;
+}
+
+function drawBlockNeon(context, x, y, color, size, alpha) {
+  const px = x * size + 2;
+  const py = y * size + 2;
+  const s = size - 4;
+  context.globalAlpha = alpha ?? 1;
+  context.shadowColor = color;
+  context.shadowBlur = 12;
+  context.fillStyle = color;
+  context.fillRect(px, py, s, s);
+  // el resplandor ya quedo pintado: apagarlo antes de los detalles internos
+  context.shadowBlur = 0;
+  context.fillStyle = 'rgba(0,0,0,0.55)';
+  context.fillRect(px + 3, py + 3, s - 6, s - 6);
+  context.strokeStyle = color;
+  context.lineWidth = 2;
+  context.strokeRect(px + 1, py + 1, s - 2, s - 2);
+  // reset defensivo: nunca dejar shadowBlur activo o contamina el grid y el resto del frame
+  context.shadowBlur = 0;
+  context.shadowColor = 'transparent';
+  context.globalAlpha = 1;
+}
+
+function roundRectPath(context, px, py, w, h, r) {
+  if (typeof context.roundRect === 'function') {
+    context.beginPath();
+    context.roundRect(px, py, w, h, r);
+    return;
+  }
+  // fallback para Safari < 16 (macOS 12 no trae ctx.roundRect)
+  context.beginPath();
+  context.moveTo(px + r, py);
+  context.arcTo(px + w, py, px + w, py + h, r);
+  context.arcTo(px + w, py + h, px, py + h, r);
+  context.arcTo(px, py + h, px, py, r);
+  context.arcTo(px, py, px + w, py, r);
+  context.closePath();
+}
+
+function drawBlockPastel(context, x, y, color, size, alpha) {
+  const px = x * size + 1.5;
+  const py = y * size + 1.5;
+  const s = size - 3;
+  const r = Math.max(3, size * 0.22);
+  context.globalAlpha = alpha ?? 1;
+  context.fillStyle = color;
+  roundRectPath(context, px, py, s, s, r);
+  context.fill();
+  // brillo suave en la mitad superior
+  context.fillStyle = 'rgba(255,255,255,0.2)';
+  roundRectPath(context, px + 2, py + 2, s - 4, (s - 4) * 0.42, Math.max(2, size * 0.16));
+  context.fill();
+  context.globalAlpha = 1;
+}
+
+function shadeColor(hex, amt) {
+  // hex tipo #rrggbb; amt en [-1, 1]: negativo oscurece, positivo aclara
+  const n = parseInt(hex.slice(1), 16);
+  const r = (n >> 16) & 255;
+  const g = (n >> 8) & 255;
+  const b = n & 255;
+  const f = t => Math.max(0, Math.min(255, Math.round(amt < 0 ? t * (1 + amt) : t + (255 - t) * amt)));
+  return 'rgb(' + f(r) + ',' + f(g) + ',' + f(b) + ')';
+}
+
+// Los tonos derivados de un color son constantes: cachearlos evita rehacer
+// parseInt/shade por cada celda y frame en el hot path de draw().
+const pixelShadeCache = new Map();
+function pixelShades(color) {
+  let shades = pixelShadeCache.get(color);
+  if (!shades) {
+    shades = {
+      light: shadeColor(color, 0.32),
+      dark: shadeColor(color, -0.34),
+      edge: shadeColor(color, -0.15),
+    };
+    pixelShadeCache.set(color, shades);
+  }
+  return shades;
+}
+
+function drawBlockPixel(context, x, y, color, size, alpha) {
+  const px = x * size + 1;
+  const py = y * size + 1;
+  const s = size - 2;
+  const { light, dark, edge } = pixelShades(color);
+  const cell = Math.max(3, Math.floor(size / 6));
+  context.globalAlpha = alpha ?? 1;
+  context.fillStyle = color;
+  context.fillRect(px, py, s, s);
+  // dithering: tablero de celdas claras sobre el tono base
+  for (let gy = 0; gy < s; gy += cell) {
+    for (let gx = 0; gx < s; gx += cell) {
+      if (((gx / cell) + (gy / cell)) % 2 === 0) {
+        context.fillStyle = light;
+        context.fillRect(px + gx, py + gy, Math.min(cell, s - gx), Math.min(cell, s - gy));
+      }
+    }
+  }
+  // borde tipo sprite: dos tonos derivados del color base
+  context.fillStyle = dark;
+  context.fillRect(px, py, s, 2);
+  context.fillRect(px, py, 2, s);
+  context.fillStyle = edge;
+  context.fillRect(px, py + s - 2, s, 2);
+  context.fillRect(px + s - 2, py, 2, s);
+  context.globalAlpha = 1;
+}
+
+const SKINS = {
+  retro: {
+    label: 'Retro',
+    colors: COLORS,
+    drawBlock: drawBlockRetro,
+  },
+  neon: {
+    label: 'Neón',
+    colors: [null, '#00e5ff', '#ffea00', '#d500f9', '#00e676', '#ff1744', '#2979ff', '#ff9100', '#b0bec5'],
+    drawBlock: drawBlockNeon,
+  },
+  pastel: {
+    label: 'Pastel',
+    colors: [null, '#a0e7e5', '#fbe7a8', '#dcc0ec', '#bce3cd', '#f4b8b8', '#c2d5f5', '#f6d3ad', '#d3d3d8'],
+    drawBlock: drawBlockPastel,
+  },
+  pixel: {
+    label: 'Pixel art',
+    colors: [null, '#3aa8b8', '#d9b23e', '#9a55b0', '#5fa86b', '#c25a5a', '#6a92c9', '#d18b3e', '#808080'],
+    drawBlock: drawBlockPixel,
+  },
+};
+
+let currentSkin = 'retro';
+let activeSkin = SKINS.retro;
+
+function refreshGridColor() {
+  gridColor = getComputedStyle(document.documentElement).getPropertyValue('--grid-color').trim();
+}
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
@@ -169,24 +324,19 @@ function updateHUD() {
 
 function drawBlock(context, x, y, colorIndex, size, alpha) {
   if (!colorIndex) return;
+  const skin = activeSkin;
   if (colorIndex === HOLE) {
     // Agujero de la tuerca: solido pero visualmente vacio. Un contorno tenue
     // comunica que la celda esta ocupada (p. ej. al apoyar otra pieza encima).
     context.globalAlpha = (alpha ?? 1) * 0.25;
-    context.strokeStyle = COLORS[8];
+    context.strokeStyle = skin.colors[8];
     context.lineWidth = 2;
     context.strokeRect(x * size + 4, y * size + 4, size - 8, size - 8);
     context.globalAlpha = 1;
     return;
   }
-  const color = COLORS[colorIndex];
-  context.globalAlpha = alpha ?? 1;
-  context.fillStyle = color;
-  context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
-  // highlight
-  context.fillStyle = 'rgba(255,255,255,0.12)';
-  context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
-  context.globalAlpha = 1;
+  // Delegar el pintado del bloque solido en la skin activa.
+  skin.drawBlock(context, x, y, skin.colors[colorIndex], size, alpha);
 }
 
 function drawGrid() {
@@ -288,7 +438,7 @@ function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
   themeToggleBtn.textContent = theme === 'light' ? '☀️' : '🌙';
   themeToggleBtn.setAttribute('aria-label', theme === 'light' ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro');
-  gridColor = getComputedStyle(document.documentElement).getPropertyValue('--grid-color').trim();
+  refreshGridColor();
 }
 
 function toggleTheme() {
@@ -298,7 +448,27 @@ function toggleTheme() {
   try { localStorage.setItem(THEME_KEY, theme); } catch (e) {}
 }
 
+function applySkin(skin) {
+  if (!SKINS[skin]) skin = 'retro';
+  currentSkin = skin;
+  activeSkin = SKINS[skin];
+  document.documentElement.setAttribute('data-skin', skin);
+  if (skinSelect) skinSelect.value = skin;
+  // La skin sobrescribe --board-bg / --grid-color en CSS: re-leer el valor real.
+  refreshGridColor();
+  // Repintar de forma explicita: en pausa o game over el rAF esta parado y no
+  // volveria a dibujar por si solo.
+  if (board) draw();
+  if (next) drawNext();
+}
+
+function changeSkin(skin) {
+  applySkin(skin);
+  try { localStorage.setItem(SKIN_KEY, currentSkin); } catch (e) {}
+}
+
 themeToggleBtn.addEventListener('click', toggleTheme);
+if (skinSelect) skinSelect.addEventListener('change', e => changeSkin(e.target.value));
 applyTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark');
 
 function init() {
@@ -347,3 +517,11 @@ document.addEventListener('keydown', e => {
 restartBtn.addEventListener('click', init);
 
 init();
+
+// Aplicar la skin persistida despues de init(): board/current/next ya existen,
+// asi el primer repintado explicito no falla.
+(function () {
+  let saved = 'retro';
+  try { saved = localStorage.getItem(SKIN_KEY) || 'retro'; } catch (e) {}
+  applySkin(saved);
+})();
