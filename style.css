@@ -23,6 +23,13 @@
   --restart-hover: #9bbdff;
   --grid-color: #22222e;
   --shadow: rgba(0, 0, 0, 0.6);
+  --menu-btn-bg: #22223a;
+  --menu-btn-text: #e0e0e0;
+  --menu-btn-border: #3a3a5a;
+  --menu-btn-hover: #2e2e4a;
+  --select-bg: #22223a;
+  --select-text: #e0e0e0;
+  --select-border: #3a3a5a;
 }
 
 [data-theme="light"] {
@@ -43,6 +50,13 @@
   --restart-hover: #5c7ce0;
   --grid-color: #dcdce6;
   --shadow: rgba(0, 0, 0, 0.15);
+  --menu-btn-bg: #e4e4ee;
+  --menu-btn-text: #1c1c26;
+  --menu-btn-border: #c4c4d4;
+  --menu-btn-hover: #d4d4e2;
+  --select-bg: #ffffff;
+  --select-text: #1c1c26;
+  --select-border: #c4c4d4;
 }
 
 body {
@@ -191,6 +205,10 @@ kbd {
   display: none;
 }
 
+.hidden {
+  display: none !important;
+}
+
 .overlay-box {
   text-align: center;
   display: flex;
@@ -228,4 +246,103 @@ kbd {
 
 #restart-btn:hover {
   background: var(--restart-hover);
+}
+
+/* ---- Menú de pausa ---- */
+.menu-box {
+  gap: 18px;
+  min-width: 240px;
+}
+
+.menu-box > div {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  width: 100%;
+}
+
+.menu-title {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 4px;
+  color: var(--accent);
+}
+
+.menu-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+
+.menu-field label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--label-color);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+#start-level-select {
+  background: var(--select-bg);
+  color: var(--select-text);
+  border: 1px solid var(--select-border);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.menu-buttons button,
+#controls-back-btn {
+  background: var(--menu-btn-bg);
+  color: var(--menu-btn-text);
+  border: 1px solid var(--menu-btn-border);
+  border-radius: 6px;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: background 0.15s;
+}
+
+.menu-buttons button:hover,
+#controls-back-btn:hover {
+  background: var(--menu-btn-hover);
+}
+
+#resume-btn {
+  background: var(--restart-bg);
+  color: var(--restart-text);
+  border-color: var(--restart-bg);
+}
+
+#resume-btn:hover {
+  background: var(--restart-hover);
+}
+
+.menu-controls-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+}
+
+.menu-controls-list li {
+  font-size: 13px;
+  color: var(--controls-text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }

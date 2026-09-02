@@ -50,17 +50,44 @@
             <li><kbd>↑</kbd> rotar</li>
             <li><kbd>↓</kbd> bajar</li>
             <li><kbd>Space</kbd> caída</li>
-            <li><kbd>P</kbd> pausa</li>
+            <li><kbd>P</kbd> / <kbd>Esc</kbd> menú</li>
           </ul>
         </div>
       </aside>
     </div>
 
     <div id="overlay" class="overlay hidden">
-      <div class="overlay-box">
+      <div class="overlay-box" id="overlay-gameover">
         <p id="overlay-title">GAME OVER</p>
         <p id="overlay-score"></p>
         <button id="restart-btn">Reiniciar</button>
+      </div>
+
+      <div class="overlay-box menu-box hidden" id="overlay-menu">
+        <div id="menu-main">
+          <p class="menu-title">PAUSA</p>
+          <div class="menu-field">
+            <label for="start-level-select">Nivel inicial</label>
+            <select id="start-level-select"></select>
+          </div>
+          <div class="menu-buttons">
+            <button id="resume-btn" type="button">Reanudar</button>
+            <button id="menu-restart-btn" type="button">Reiniciar</button>
+            <button id="controls-btn" type="button">Ver controles</button>
+          </div>
+        </div>
+
+        <div id="menu-controls" class="hidden">
+          <p class="menu-title">CONTROLES</p>
+          <ul class="menu-controls-list">
+            <li><kbd>←</kbd><kbd>→</kbd> mover la pieza</li>
+            <li><kbd>↑</kbd> / <kbd>X</kbd> rotar</li>
+            <li><kbd>↓</kbd> bajar (soft drop)</li>
+            <li><kbd>Space</kbd> caída instantánea</li>
+            <li><kbd>P</kbd> / <kbd>Esc</kbd> abrir/cerrar menú</li>
+          </ul>
+          <button id="controls-back-btn" type="button">Volver</button>
+        </div>
       </div>
     </div>
   </div>

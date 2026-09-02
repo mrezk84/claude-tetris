@@ -47,9 +47,28 @@ const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
 const themeToggleBtn = document.getElementById('theme-toggle');
 
+// Menu de pausa: overlay con dos vistas (gameover / menu) y el menu
+// con dos sub-vistas (principal / lista de controles).
+const overlayGameover = document.getElementById('overlay-gameover');
+const overlayMenu = document.getElementById('overlay-menu');
+const menuMain = document.getElementById('menu-main');
+const menuControls = document.getElementById('menu-controls');
+const resumeBtn = document.getElementById('resume-btn');
+const menuRestartBtn = document.getElementById('menu-restart-btn');
+const controlsBtn = document.getElementById('controls-btn');
+const controlsBackBtn = document.getElementById('controls-back-btn');
+const startLevelSelect = document.getElementById('start-level-select');
+
 const THEME_KEY = 'tetris-theme';
+const START_LEVEL_KEY = 'tetris-start-level';
+const MAX_START_LEVEL = 15;
 
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
+// startLevel: nivel base de la partida EN CURSO (lo lee init() y clearLines()).
+// configuredStartLevel: eleccion del selector, se persiste y solo pasa a
+// startLevel al reiniciar; asi tocar el selector no altera la partida actual.
+let startLevel = 1;
+let configuredStartLevel = 1;
 let gridColor = '#22222e';
 
 function createBoard() {
@@ -116,7 +135,9 @@ function clearLines() {
   if (cleared) {
     lines += cleared;
     score += (LINE_SCORES[cleared] || 0) * level;
-    level = Math.floor(lines / 10) + 1;
+    // Parte del nivel inicial elegido en el menu; si no, se perderia
+    // al limpiar la primera linea.
+    level = startLevel + Math.floor(lines / 10);
     dropInterval = Math.max(100, 1000 - (level - 1) * 90);
     updateHUD();
   }
@@ -246,20 +267,50 @@ function endGame() {
   cancelAnimationFrame(animId);
   overlayTitle.textContent = 'GAME OVER';
   overlayScore.textContent = `Puntuación: ${score.toLocaleString()}`;
+  // El overlay alterna entre vista-menu y vista-gameover, nunca las mezcla.
+  overlayMenu.classList.add('hidden');
+  overlayGameover.classList.remove('hidden');
   overlay.classList.remove('hidden');
+}
+
+function showMenuMain() {
+  menuControls.classList.add('hidden');
+  menuMain.classList.remove('hidden');
+}
+
+function showMenuControls() {
+  menuMain.classList.add('hidden');
+  menuControls.classList.remove('hidden');
+}
+
+function openMenu() {
+  showMenuMain();
+  startLevelSelect.value = String(configuredStartLevel);
+  overlayGameover.classList.add('hidden');
+  overlayMenu.classList.remove('hidden');
+  overlay.classList.remove('hidden');
+}
+
+function closeMenu() {
+  overlay.classList.add('hidden');
+  overlayMenu.classList.add('hidden');
+  showMenuMain();
+  // Evita que Space/Enter sobre un boton enfocado lo reactive al reanudar.
+  if (document.activeElement && typeof document.activeElement.blur === 'function') {
+    document.activeElement.blur();
+  }
 }
 
 function togglePause() {
   if (gameOver) return;
   paused = !paused;
   if (!paused) {
+    closeMenu();
     lastTime = performance.now();
     loop(lastTime);
   } else {
     cancelAnimationFrame(animId);
-    overlayTitle.textContent = 'PAUSA';
-    overlayScore.textContent = '';
-    overlay.classList.remove('hidden');
+    openMenu();
   }
 }
 
@@ -301,26 +352,75 @@ function toggleTheme() {
 themeToggleBtn.addEventListener('click', toggleTheme);
 applyTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark');
 
+// ---- Selector de nivel inicial ----
+function readStartLevel() {
+  try {
+    const stored = parseInt(localStorage.getItem(START_LEVEL_KEY), 10);
+    if (stored >= 1 && stored <= MAX_START_LEVEL) return stored;
+  } catch (e) {}
+  return 1;
+}
+
+for (let i = 1; i <= MAX_START_LEVEL; i++) {
+  const opt = document.createElement('option');
+  opt.value = String(i);
+  opt.textContent = String(i);
+  startLevelSelect.appendChild(opt);
+}
+
+configuredStartLevel = readStartLevel();
+startLevel = configuredStartLevel;
+startLevelSelect.value = String(configuredStartLevel);
+
+startLevelSelect.addEventListener('change', () => {
+  const v = parseInt(startLevelSelect.value, 10);
+  configuredStartLevel = (v >= 1 && v <= MAX_START_LEVEL) ? v : 1;
+  try { localStorage.setItem(START_LEVEL_KEY, String(configuredStartLevel)); } catch (e) {}
+});
+
+resumeBtn.addEventListener('click', () => { if (paused) togglePause(); });
+menuRestartBtn.addEventListener('click', init);
+controlsBtn.addEventListener('click', showMenuControls);
+controlsBackBtn.addEventListener('click', showMenuMain);
+
 function init() {
   board = createBoard();
   score = 0;
   lines = 0;
-  level = 1;
+  // La eleccion del selector se aplica solo aqui, al empezar partida nueva.
+  startLevel = configuredStartLevel;
+  level = startLevel;
   paused = false;
   gameOver = false;
-  dropInterval = 1000;
+  dropInterval = Math.max(100, 1000 - (level - 1) * 90);
   dropAccum = 0;
   lastTime = performance.now();
   next = randomPiece();
   spawn();
   updateHUD();
   overlay.classList.add('hidden');
+  overlayMenu.classList.add('hidden');
+  overlayGameover.classList.remove('hidden');
+  showMenuMain();
+  // Quita el foco de cualquier boton del menu para que Space/Enter no lo reactive.
+  if (document.activeElement && typeof document.activeElement.blur === 'function') {
+    document.activeElement.blur();
+  }
   cancelAnimationFrame(animId);
   animId = requestAnimationFrame(loop);
 }
 
 document.addEventListener('keydown', e => {
   if (e.code === 'KeyP') { togglePause(); return; }
+  // Escape abre/cierra el menu, pero no hace nada en game over.
+  if (e.code === 'Escape') {
+    if (gameOver) return;
+    // Si el foco esta en el selector de nivel, Escape solo lo abandona
+    // (cerrar su desplegable nativo) y no reanuda la partida.
+    if (document.activeElement === startLevelSelect) { startLevelSelect.blur(); return; }
+    togglePause();
+    return;
+  }
   if (paused || gameOver) return;
   switch (e.code) {
     case 'ArrowLeft':

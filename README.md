@@ -17,6 +17,7 @@ Implementación del clásico **Tetris** en JavaScript vanilla, usando HTML5 Canv
     - [Opción 1: abrir el archivo directamente](#opción-1-abrir-el-archivo-directamente)
     - [Opción 2: servidor local (recomendado)](#opción-2-servidor-local-recomendado)
   - [Controles](#controles)
+  - [Menú de pausa](#menú-de-pausa)
   - [Cómo funciona](#cómo-funciona)
     - [1. `index.html`](#1-indexhtml)
     - [2. `style.css`](#2-stylecss)
@@ -42,7 +43,8 @@ Es una versión jugable del Tetris clásico con todas las mecánicas que esperar
 - **Vista previa** de la siguiente pieza.
 - **Sistema de puntuación** clásico de Tetris (100 / 300 / 500 / 800 multiplicado por nivel).
 - **Niveles** que aumentan cada 10 líneas y aceleran la caída.
-- **Pausa** y **Game Over** con opción de reinicio.
+- **Menú de pausa** completo con vistas internas (menú ↔ controles), botones _Reanudar_ / _Reiniciar_ / _Ver controles_ y **selector de nivel inicial** (1–15) persistido en `localStorage`.
+- **Game Over** con opción de reinicio.
 
 ---
 
@@ -85,7 +87,20 @@ Después abre `http://localhost:8000` en el navegador.
 | `↑` o `X` | Rotar la pieza en sentido horario |
 | `↓`       | Soft drop (bajar más rápido)      |
 | `Espacio` | Hard drop (caída instantánea)     |
-| `P`       | Pausar / reanudar                 |
+| `P` / `Esc` | Abrir / cerrar el menú de pausa  |
+
+---
+
+## Menú de pausa
+
+Al pulsar `P` o `Esc` durante la partida (no en Game Over) se abre un **menú de pausa** sobre el tablero. Mientras está abierto, todo el input de juego queda bloqueado: solo `P` y `Esc` responden.
+
+El menú tiene dos vistas internas:
+
+- **Menú principal**: selector de **nivel inicial** (1–15) y los botones _Reanudar_, _Reiniciar_ y _Ver controles_.
+- **Controles**: la lista completa de teclas, con un botón _Volver_ al menú principal.
+
+El **nivel inicial** se guarda en `localStorage` bajo la clave `tetris-start-level`. Al reiniciar la partida, el juego arranca directamente en ese nivel (HUD y velocidad de caída incluidos) y la progresión de nivel se calcula como `nivelInicial + floor(líneas / 10)`, de modo que elegir un nivel alto no se pierde al limpiar la primera línea.
 
 ---
 
